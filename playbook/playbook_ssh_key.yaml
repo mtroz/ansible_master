@@ -1,0 +1,12 @@
+---
+- name: Exchange Keys between servers
+  hosts: all
+  tasks:
+    - name: Copy the file from master to the destination
+      copy:
+        src: /root/.ssh/id_rsa.pub
+        dest: /tmp/remote-id_rsa.pub  
+    
+    - name: add the public key into Authorized_keys file to enable Key Auth
+      shell: "cat /tmp/remote-id_rsa.pub >> /root/.ssh/authorized_keys"
+      register: addtoauth

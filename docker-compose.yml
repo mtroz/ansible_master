@@ -1,0 +1,36 @@
+version: '3'
+
+networks:
+  ansible_network:
+    ipam:
+      config:
+      - subnet: 172.20.0.0/24
+
+services:
+  master:
+    build: ./Dockerfiles/ansible
+    networks:
+      ansible_network:
+        ipv4_address: 172.20.0.4
+    volumes:
+    - ./playbook:/tmp/playbook
+    command: tail -f /dev/null
+
+  web:
+    build: ./Dockerfiles/machine
+    networks:
+      ansible_network:
+        ipv4_address: 172.20.0.5
+  db:
+    build: ./Dockerfiles/machine
+    networks:
+      ansible_network:
+        ipv4_address: 172.20.0.6
+  lb:
+    build: ./Dockerfiles/machine
+    networks:
+      ansible_network:
+        ipv4_address: 172.20.0.7
+    ports: 
+    - 8000:80
+

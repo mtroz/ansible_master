@@ -1,0 +1,39 @@
+---
+
+
+- name: mysql server
+  hosts: db2 #remplace par le serveur sur lequel on veut executer le playbook
+  tasks:
+  - name: update repository
+    apt:
+      update_cache: yes
+
+  - name: Install MariaDB server package
+      apt: 
+        name: mariadb-server 
+        state: present
+
+  - name: Start Mysql Service
+      service: 
+        name: mysql 
+        state: started 
+        enabled: true
+
+  - name: Install python-pymysql package #required for mysql_db tasks
+      pip: 
+        name: pymysql 
+        state: present
+
+  - name: Create a new database
+      mysql_db: 
+        name: ajc 
+        state: present 
+        collation: utf8_general_ci
+
+  - name: Create a database user
+      mysql_user: 
+        name: ajcuser 
+        password: ajcuser 
+        priv: ajc.*:ALL 
+        host: 172.19.0.% 
+        state: present

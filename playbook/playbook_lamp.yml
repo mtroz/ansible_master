@@ -1,0 +1,105 @@
+---
+# c'est une installation d'un php version 7.2 à verifier si compatible avec la machine cible
+
+- name: Lamp serveur
+  hosts: web1 #remplace par le serveur sur lequel on veut executer le playbook
+  tasks:
+  - name: update repository
+    apt:
+      update_cache: yes
+  - name: latest Apache version
+    apt:
+      name: apache2
+      state: latest
+  - name: Apache enabled and running
+    service:
+      name: apache2
+      enabled: true
+      state: started
+  - name: install php
+    apt:
+      pkg: 
+      - php7.2
+      - php7.2-cli
+      - php7.2-common
+      state: latest
+  - name: install extension php
+    apt:
+      pkg: 
+      - php7.2-curl
+      - php7.2-gd
+      - php7.2-json
+      - php7.2-mbstring
+      - php7.2-intl
+      - php7.2-mysql
+      - php7.2-xml
+      - php7.2-zip
+      state: latest
+  - name: copy file
+    copy:
+      src: ./index.php
+      dest: /var/www/html
+      follow: yes
+  - name: Install MariaDB server package
+    apt: 
+      name: mariadb-server 
+      state: present
+
+  - name: Create `/root/.my.cnf`  with root password credentials
+    template:
+      src:  my.cnf.j2
+      dest: /root/.my.cnf
+      owner: root
+      mode: 0600
+  - name: Start Mysql Service
+    service: 
+      name: mysql 
+      state: started 
+      enabled: true
+  
+  - name: Install python-pymysql package #required for mysql_db tasks
+    apt: 
+      name: python-pymysql 
+      state: present 
+
+  - name: Ensure mysql root password is updated for all root accounts
+    mysql_user:
+      name: root
+      host: localhost
+      login_unix_socket: /var/run/mysqld/mysqld.sock
+      password: ansible
+      priv: '*.*:ALL,GRANT'
+      check_implicit_admin: true
+    
+  - name: Create a new database
+    mysql_db: 
+      name: ajc
+      login_unix_socket: /var/run/mysqld/mysqld.sock 
+      state: present 
+      collation: utf8_general_ci
+
+  - name: Create a database user
+    mysql_user: 
+      name: ajc
+      password: ansible 
+      login_unix_socket: /var/run/mysqld/mysqld.sock
+      priv: 'ansibleTest.*:ALL' 
+      host: localhost 
+      state: present
+  
+  - name: copy data file 
+    copy:
+      src: ./dump.sql
+      dest: /tmp/dump.sql
+
+  - name: insert data into database
+    mysql_db:
+      name: ajc
+      login_unix_socket: /var/run/mysqld/mysqld.sock
+      state: import
+      target: /tmp/dump.sql
+
+  - name: restart apache
+    service:
+      name: apache2
+      state: restarted
